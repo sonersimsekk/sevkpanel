@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// role: Şoför | Yükleme personeli | Operasyon sorumlusu
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  phone        String?
+  passwordHash String
+  role         String
+  createdAt    DateTime  @default(now())
+  company      Company?
+  requests     Shipment[]
+  messages     Message[]
+}
+
+model Company {
+  id          String        @id @default(cuid())
+  name        String
+  city        String?
+  description String?
+  ownerId     String        @unique
+  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  requests    Shipment[]
+  vehicles    Vehicle[]
+  staff       Staff[]
+  createdAt   DateTime      @default(now())
+}
+
+model Vehicle {
+  id        String        @id @default(cuid())
+  companyId String
+  company   Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plate     String
+  type      String
+  capacity  String?
+  note      String?
+  active    Boolean       @default(true)
+  requests  Shipment[]
+  createdAt DateTime      @default(now())
+}
+
+// role: Şoför | Yükleme personeli | Operasyon sorumlusu
+model Staff {
+  id        String        @id @default(cuid())
+  companyId String
+  company   Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  phone     String?
+  role      String
+  active    Boolean       @default(true)
+  requests  Shipment[]
+  createdAt DateTime      @default(now())
+}
+
+// status: PENDING | QUOTED | ACCEPTED | REJECTED | IN_PROGRESS | COMPLETED | CANCELLED
+model Shipment {
+  id            Int       @id @default(autoincrement())
+  customerId    String
+  customer      User      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  companyId     String
+  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Yük
+  cargoType     String
+  cargoWeight   Int?
+  palletCount   Int?
+  cargoVolume   Float?
+  vehicleType   String?
+  items         String?
+
+  // Güzergah (yükleme -> teslim)
+  fromCity      String
+  fromDistrict  String
+  fromAddress   String
+  toCity        String
+  toDistrict    String
+  toAddress     String
+  loadDate      DateTime
+  flexibleDate  Boolean   @default(false)
+
+  // Ek hizmetler
+  loadingHelp   Boolean   @default(false)
+  forklift      Boolean   @default(false)
+  packing       Boolean   @default(false)
+  insurance     Boolean   @default(false)
+  contactPhone  String
+
+  status        String    @default("PENDING")
+  quotePrice    Float?
+  quoteNote     String?
+  quotedAt      DateTime?
+  scheduledAt   DateTime?
+  internalNote  String?
+  cancelReason  String?
+
+  messages      Message[]
+  vehicles      Vehicle[]
+  staff         Staff[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  requestId Int
+  request   Shipment @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User        @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime    @default(now())
+}

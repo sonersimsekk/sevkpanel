@@ -1,0 +1,13 @@
+node_modules
+.next
+next-env.d.ts
+*.tsbuildinfo
+
+# Gizli ayarlar ve yerel veritabanı
+.env
+.env.local
+prisma/*.db
+prisma/*.db-journal
+
+# Yerel araç ayarları
+.claude/
